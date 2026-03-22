@@ -9,10 +9,10 @@ import { LayerVisibility, ChoroplethMetric } from "@/types";
 const MapView = dynamic(() => import("@/components/MapView"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-slate-900">
+    <div className="w-full h-full flex items-center justify-center bg-gray-50">
       <div className="text-center">
-        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-slate-400">Carregando mapa...</p>
+        <div className="w-12 h-12 border-4 border-[#005BAA] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-gray-500 text-sm">Carregando mapa...</p>
       </div>
     </div>
   ),
@@ -26,6 +26,7 @@ export default function Home() {
     pipelines_water: true,
     pipelines_sewage: true,
     choropleth: true,
+    power_plants: true,
   });
 
   const [choroplethMetric, setChoroplethMetric] =
@@ -33,9 +34,7 @@ export default function Home() {
 
   const [is3D, setIs3D] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedReservoir, setSelectedReservoir] = useState<string | null>(
-    null
-  );
+  const [selectedReservoir, setSelectedReservoir] = useState<string | null>(null);
   const [showDashboard, setShowDashboard] = useState(true);
 
   const handleToggleLayer = useCallback((key: keyof LayerVisibility) => {
@@ -48,9 +47,9 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="h-screen w-screen flex overflow-hidden">
-      {/* Left Sidebar - Controls */}
-      <div className="w-64 min-w-[256px] bg-slate-900 border-r border-slate-700 p-4 flex flex-col">
+    <div className="h-screen w-screen flex overflow-hidden bg-gray-50">
+      {/* Left Sidebar */}
+      <div className="w-[270px] min-w-[270px] bg-white border-r border-gray-200 p-4 flex flex-col shadow-sm">
         <Sidebar
           layers={layers}
           onToggleLayer={handleToggleLayer}
@@ -73,38 +72,47 @@ export default function Home() {
           onSelectReservoir={handleSelectReservoir}
         />
 
-        {/* Stats bar */}
-        <div className="absolute top-4 left-4 bg-slate-900/90 backdrop-blur-sm border border-slate-700 rounded-lg px-4 py-2 flex gap-6 text-xs">
-          <div>
-            <span className="text-slate-400">ETAs</span>
-            <span className="text-blue-400 font-bold ml-1">15</span>
+        {/* Top bar - SABESP branded */}
+        <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl px-5 py-2.5 flex items-center gap-5 shadow-md">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded bg-[#005BAA] flex items-center justify-center">
+              <span className="text-white text-[10px] font-bold">S</span>
+            </div>
+            <span className="text-sm font-bold text-[#005BAA]">SABESP</span>
           </div>
-          <div>
-            <span className="text-slate-400">ETEs</span>
-            <span className="text-orange-400 font-bold ml-1">14</span>
-          </div>
-          <div>
-            <span className="text-slate-400">Reservatórios</span>
-            <span className="text-cyan-400 font-bold ml-1">7</span>
-          </div>
-          <div>
-            <span className="text-slate-400">Regiões</span>
-            <span className="text-green-400 font-bold ml-1">12</span>
+          <div className="h-5 w-px bg-gray-200" />
+          <div className="flex gap-5 text-xs">
+            <div>
+              <span className="text-gray-400">ETAs</span>
+              <span className="text-[#005BAA] font-bold ml-1">15</span>
+            </div>
+            <div>
+              <span className="text-gray-400">ETEs</span>
+              <span className="text-amber-600 font-bold ml-1">14</span>
+            </div>
+            <div>
+              <span className="text-gray-400">Reservatórios</span>
+              <span className="text-[#00A651] font-bold ml-1">8</span>
+            </div>
+            <div>
+              <span className="text-gray-400">Usinas</span>
+              <span className="text-amber-500 font-bold ml-1">11</span>
+            </div>
           </div>
         </div>
 
         {/* Dashboard toggle */}
         <button
           onClick={() => setShowDashboard((prev) => !prev)}
-          className="absolute top-4 right-4 bg-slate-900/90 backdrop-blur-sm border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-300 hover:text-white hover:border-cyan-500 transition-colors"
+          className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-600 hover:text-[#005BAA] hover:border-[#005BAA] transition-colors shadow-md font-medium"
         >
           {showDashboard ? "Ocultar Painel" : "Reservatórios"}
         </button>
       </div>
 
-      {/* Right Panel - Reservoir Dashboard */}
+      {/* Right Panel */}
       {showDashboard && (
-        <div className="w-80 min-w-[320px] bg-slate-900 border-l border-slate-700 p-4 overflow-y-auto">
+        <div className="w-[340px] min-w-[340px] bg-gray-50 border-l border-gray-200 p-4 overflow-y-auto">
           <ReservoirDashboard
             selectedId={selectedReservoir}
             onClose={() => setSelectedReservoir(null)}

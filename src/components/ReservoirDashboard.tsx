@@ -32,17 +32,17 @@ export default function ReservoirDashboard({
   if (!reservoir) {
     return (
       <div className="h-full flex flex-col">
-        <h2 className="text-lg font-bold text-cyan-400 mb-4">
+        <h2 className="text-base font-bold text-[#005BAA] mb-3">
           Reservatórios - Visão Geral
         </h2>
-        <div className="grid grid-cols-1 gap-3 overflow-y-auto flex-1 pr-1">
+        <div className="grid grid-cols-1 gap-2.5 overflow-y-auto flex-1 pr-1">
           {reservoirs.map((r) => (
-            <button
+            <div
               key={r.id}
-              className="bg-slate-800/80 rounded-lg p-3 text-left hover:bg-slate-700/80 transition-colors border border-slate-700"
+              className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
             >
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold text-sm text-slate-200">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-semibold text-sm text-gray-800">
                   {r.name}
                 </span>
                 <span
@@ -52,7 +52,7 @@ export default function ReservoirDashboard({
                   {r.current_level_pct}%
                 </span>
               </div>
-              <div className="w-full bg-slate-700 rounded-full h-2.5">
+              <div className="w-full bg-gray-200 rounded-full h-2.5">
                 <div
                   className="h-2.5 rounded-full transition-all"
                   style={{
@@ -61,17 +61,18 @@ export default function ReservoirDashboard({
                   }}
                 />
               </div>
-              <div className="flex justify-between mt-1 text-xs text-slate-400">
+              <div className="flex justify-between mt-1.5 text-[10px] text-gray-500">
                 <span>{r.total_volume_hm3} hm³ total</span>
                 <span>
-                  {(
-                    (r.total_volume_hm3 * r.current_level_pct) /
-                    100
-                  ).toFixed(1)}{" "}
-                  hm³ atual
+                  {((r.total_volume_hm3 * r.current_level_pct) / 100).toFixed(1)} hm³ armazenado
                 </span>
               </div>
-            </button>
+              {r.description && (
+                <p className="text-[10px] text-gray-400 mt-1 leading-snug line-clamp-2">
+                  {r.description}
+                </p>
+              )}
+            </div>
           ))}
         </div>
       </div>
@@ -92,20 +93,27 @@ export default function ReservoirDashboard({
 
   return (
     <div className="h-full flex flex-col overflow-y-auto">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-bold text-cyan-400">{reservoir.name}</h2>
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-base font-bold text-[#005BAA]">{reservoir.name}</h2>
         <button
           onClick={onClose}
-          className="text-slate-400 hover:text-white text-sm px-2 py-1 rounded hover:bg-slate-700"
+          className="text-gray-400 hover:text-[#005BAA] text-xs px-2 py-1 rounded hover:bg-[#005BAA]/5 transition-colors"
         >
           Voltar
         </button>
       </div>
 
+      {/* Description */}
+      {reservoir.description && (
+        <p className="text-xs text-gray-500 mb-3 leading-relaxed bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+          {reservoir.description}
+        </p>
+      )}
+
       {/* Current Level */}
-      <div className="bg-slate-800/80 rounded-lg p-4 mb-4 border border-slate-700">
+      <div className="bg-white rounded-lg p-4 mb-3 border border-gray-200 shadow-sm">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-slate-300">Nível Atual</span>
+          <span className="text-gray-600 text-sm">Nível Atual</span>
           <span
             className="text-3xl font-bold"
             style={{ color: getLevelColor(reservoir.current_level_pct) }}
@@ -113,7 +121,7 @@ export default function ReservoirDashboard({
             {reservoir.current_level_pct}%
           </span>
         </div>
-        <div className="w-full bg-slate-700 rounded-full h-4">
+        <div className="w-full bg-gray-200 rounded-full h-4">
           <div
             className="h-4 rounded-full transition-all"
             style={{
@@ -122,102 +130,78 @@ export default function ReservoirDashboard({
             }}
           />
         </div>
-        <div className="flex justify-between mt-2 text-xs text-slate-400">
+        <div className="flex justify-between mt-2 text-xs text-gray-500">
           <span>Volume total: {reservoir.total_volume_hm3} hm³</span>
           <span>
             Armazenado:{" "}
-            {(
-              (reservoir.total_volume_hm3 * reservoir.current_level_pct) /
-              100
-            ).toFixed(1)}{" "}
-            hm³
+            {((reservoir.total_volume_hm3 * reservoir.current_level_pct) / 100).toFixed(1)} hm³
           </span>
         </div>
       </div>
 
       {/* History Chart */}
-      <div className="bg-slate-800/80 rounded-lg p-4 mb-4 border border-slate-700">
-        <h3 className="text-sm font-semibold text-slate-300 mb-2">
+      <div className="bg-white rounded-lg p-4 mb-3 border border-gray-200 shadow-sm">
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">
           Histórico (12 meses)
         </h3>
-        <ResponsiveContainer width="100%" height={180}>
+        <ResponsiveContainer width="100%" height={170}>
           <LineChart data={historyData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-            <XAxis
-              dataKey="month"
-              stroke="#94a3b8"
-              tick={{ fontSize: 10 }}
-            />
-            <YAxis
-              domain={[0, 100]}
-              stroke="#94a3b8"
-              tick={{ fontSize: 10 }}
-              unit="%"
-            />
+            <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+            <XAxis dataKey="month" stroke="#94A3B8" tick={{ fontSize: 10 }} />
+            <YAxis domain={[0, 100]} stroke="#94A3B8" tick={{ fontSize: 10 }} unit="%" />
             <Tooltip
               contentStyle={{
-                backgroundColor: "#1e293b",
-                border: "1px solid #475569",
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #E2E8F0",
                 borderRadius: "8px",
-                color: "#e2e8f0",
+                color: "#334155",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
               }}
             />
             <Line
               type="monotone"
               dataKey="nivel"
-              stroke="#22d3ee"
+              stroke="#005BAA"
               strokeWidth={2}
-              dot={{ fill: "#22d3ee", r: 3 }}
+              dot={{ fill: "#005BAA", r: 3 }}
               name="Nível %"
             />
             <ReferenceLine
               y={30}
-              stroke="#ef4444"
+              stroke="#EF4444"
               strokeDasharray="3 3"
-              label={{
-                value: "Crítico",
-                fill: "#ef4444",
-                fontSize: 10,
-              }}
+              label={{ value: "Crítico", fill: "#EF4444", fontSize: 10 }}
             />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
       {/* Forecast Chart */}
-      <div className="bg-slate-800/80 rounded-lg p-4 border border-slate-700">
-        <h3 className="text-sm font-semibold text-slate-300 mb-2">
+      <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">
           Previsão (próximos 12 meses)
         </h3>
-        <ResponsiveContainer width="100%" height={200}>
+        <ResponsiveContainer width="100%" height={190}>
           <AreaChart data={forecastData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-            <XAxis
-              dataKey="month"
-              stroke="#94a3b8"
-              tick={{ fontSize: 10 }}
-            />
-            <YAxis
-              domain={[0, 100]}
-              stroke="#94a3b8"
-              tick={{ fontSize: 10 }}
-              unit="%"
-            />
+            <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+            <XAxis dataKey="month" stroke="#94A3B8" tick={{ fontSize: 10 }} />
+            <YAxis domain={[0, 100]} stroke="#94A3B8" tick={{ fontSize: 10 }} unit="%" />
             <Tooltip
               contentStyle={{
-                backgroundColor: "#1e293b",
-                border: "1px solid #475569",
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #E2E8F0",
                 borderRadius: "8px",
-                color: "#e2e8f0",
+                color: "#334155",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
               }}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Area
               type="monotone"
               dataKey="otimista"
-              stroke="#22c55e"
-              fill="#22c55e"
-              fillOpacity={0.1}
+              stroke="#00A651"
+              fill="#00A651"
+              fillOpacity={0.08}
               strokeWidth={1.5}
               name="Otimista"
               strokeDasharray="4 2"
@@ -225,32 +209,27 @@ export default function ReservoirDashboard({
             <Area
               type="monotone"
               dataKey="base"
-              stroke="#3b82f6"
-              fill="#3b82f6"
-              fillOpacity={0.15}
+              stroke="#005BAA"
+              fill="#005BAA"
+              fillOpacity={0.12}
               strokeWidth={2}
               name="Base"
             />
             <Area
               type="monotone"
               dataKey="pessimista"
-              stroke="#ef4444"
-              fill="#ef4444"
-              fillOpacity={0.1}
+              stroke="#EF4444"
+              fill="#EF4444"
+              fillOpacity={0.08}
               strokeWidth={1.5}
               name="Pessimista"
               strokeDasharray="4 2"
             />
-            <ReferenceLine
-              y={30}
-              stroke="#ef4444"
-              strokeDasharray="3 3"
-            />
+            <ReferenceLine y={30} stroke="#EF4444" strokeDasharray="3 3" />
           </AreaChart>
         </ResponsiveContainer>
-        <p className="text-xs text-slate-500 mt-2">
-          Cenários baseados em tendência de consumo e projeções pluviométricas
-          (INMET/CPTEC)
+        <p className="text-[10px] text-gray-400 mt-2">
+          Cenários baseados em tendência de consumo e projeções pluviométricas (INMET/CPTEC)
         </p>
       </div>
     </div>
