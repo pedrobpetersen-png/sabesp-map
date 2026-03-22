@@ -16,6 +16,7 @@ interface SidebarProps {
   onToggle3D: () => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
+  viewMode: "investor" | "engineer";
 }
 
 // SVG icon components for legend differentiation
@@ -107,6 +108,7 @@ export default function Sidebar({
   onToggle3D,
   searchQuery,
   onSearchChange,
+  viewMode,
 }: SidebarProps) {
   const totalCapacityETA = etas.reduce((s, e) => s + e.capacity_m3s, 0);
   const totalCapacityETE = etes.reduce((s, e) => s + e.capacity_m3s, 0);
@@ -296,10 +298,28 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Data Sources */}
+      {/* About the Data */}
       <div className="mt-auto pt-3 border-t border-gray-200">
-        <p className="text-[10px] text-gray-400">Fontes: SABESP, EMAE, ANA, SNIS, INMET/CPTEC</p>
-        <p className="text-[10px] text-gray-400 mt-0.5">Dados ilustrativos para treinamento e demonstração</p>
+        <details className="group">
+          <summary className="text-[10px] text-gray-500 font-medium cursor-pointer hover:text-[#005BAA] transition-colors list-none flex items-center gap-1">
+            <svg className="w-3 h-3 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+            Sobre os Dados
+          </summary>
+          <div className="mt-2 space-y-1.5 text-[9px] text-gray-400">
+            <p><strong className="text-gray-500">Fontes:</strong> SABESP, EMAE, ANA (Agência Nacional de Águas), SNIS (Sistema Nacional de Informações sobre Saneamento), INMET/CPTEC.</p>
+            <p><strong className="text-gray-500">Atualização:</strong> Dados de referência SNIS 2023. Níveis de reservatórios simulados com base em séries históricas.</p>
+            <p><strong className="text-gray-500">Projeções:</strong> Cenários de previsão baseados em tendência de consumo e projeções pluviométricas (INMET/CPTEC).</p>
+            <p><strong className="text-gray-500">Marco Legal:</strong> Lei 14.026/2020 - Metas de universalização até 2033.</p>
+            {viewMode === "investor" && (
+              <p><strong className="text-gray-500">Regulação:</strong> ARSESP (Agência Reguladora de Saneamento e Energia de SP). Revisão tarifária quinquenal.</p>
+            )}
+            <p className="pt-1 border-t border-gray-200 text-gray-300">
+              ⚠ Dados ilustrativos para treinamento e demonstração. Não utilizar para decisões operacionais.
+            </p>
+          </div>
+        </details>
       </div>
     </div>
   );

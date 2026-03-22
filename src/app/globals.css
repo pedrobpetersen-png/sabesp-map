@@ -88,3 +88,28 @@ body {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Mobile responsive - hide sidebars on small screens by default */
+@media (max-width: 768px) {
+  .sidebar-left,
+  .sidebar-right {
+    position: fixed;
+    z-index: 50;
+    top: 0;
+    bottom: 0;
+  }
+  .sidebar-left {
+    left: 0;
+  }
+  .sidebar-right {
+    right: 0;
+  }
+}
+
+/* Details/summary arrow removal for custom arrow */
+details > summary {
+  list-style: none;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
