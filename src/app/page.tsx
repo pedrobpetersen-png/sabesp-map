@@ -5,6 +5,10 @@ import dynamic from "next/dynamic";
 import Sidebar from "@/components/Sidebar";
 import ReservoirDashboard from "@/components/ReservoirDashboard";
 import { LayerVisibility, ChoroplethMetric } from "@/types";
+import { etas } from "@/data/etas";
+import { etes } from "@/data/etes";
+import { powerPlants } from "@/data/powerplants";
+import { reservoirs } from "@/data/reservoirs";
 
 const MapView = dynamic(() => import("@/components/MapView"), {
   ssr: false,
@@ -35,6 +39,7 @@ export default function Home() {
   const [is3D, setIs3D] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedReservoir, setSelectedReservoir] = useState<string | null>(null);
+  const [flyToReservoirId, setFlyToReservoirId] = useState<string | null>(null);
   const [showDashboard, setShowDashboard] = useState(true);
 
   const handleToggleLayer = useCallback((key: keyof LayerVisibility) => {
@@ -44,6 +49,13 @@ export default function Home() {
   const handleSelectReservoir = useCallback((id: string | null) => {
     setSelectedReservoir(id);
     setShowDashboard(true);
+  }, []);
+
+  const handleDashboardSelect = useCallback((id: string) => {
+    setSelectedReservoir(id);
+    setFlyToReservoirId(id);
+    setShowDashboard(true);
+    setTimeout(() => setFlyToReservoirId(null), 2000);
   }, []);
 
   return (
@@ -70,9 +82,10 @@ export default function Home() {
           searchQuery={searchQuery}
           is3D={is3D}
           onSelectReservoir={handleSelectReservoir}
+          flyToReservoirId={flyToReservoirId}
         />
 
-        {/* Top bar - SABESP branded */}
+        {/* Top bar */}
         <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl px-5 py-2.5 flex items-center gap-5 shadow-md">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded bg-[#005BAA] flex items-center justify-center">
@@ -84,19 +97,19 @@ export default function Home() {
           <div className="flex gap-5 text-xs">
             <div>
               <span className="text-gray-400">ETAs</span>
-              <span className="text-[#005BAA] font-bold ml-1">15</span>
+              <span className="text-[#005BAA] font-bold ml-1">{etas.length}</span>
             </div>
             <div>
               <span className="text-gray-400">ETEs</span>
-              <span className="text-amber-600 font-bold ml-1">14</span>
+              <span className="text-amber-600 font-bold ml-1">{etes.length}</span>
             </div>
             <div>
               <span className="text-gray-400">Reservatórios</span>
-              <span className="text-[#00A651] font-bold ml-1">8</span>
+              <span className="text-[#00A651] font-bold ml-1">{reservoirs.length}</span>
             </div>
             <div>
               <span className="text-gray-400">Usinas</span>
-              <span className="text-amber-500 font-bold ml-1">11</span>
+              <span className="text-amber-500 font-bold ml-1">{powerPlants.length}</span>
             </div>
           </div>
         </div>
@@ -115,6 +128,7 @@ export default function Home() {
         <div className="w-[340px] min-w-[340px] bg-gray-50 border-l border-gray-200 p-4 overflow-y-auto">
           <ReservoirDashboard
             selectedId={selectedReservoir}
+            onSelect={handleDashboardSelect}
             onClose={() => setSelectedReservoir(null)}
           />
         </div>

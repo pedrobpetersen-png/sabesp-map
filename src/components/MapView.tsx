@@ -35,6 +35,7 @@ interface MapViewProps {
   searchQuery: string;
   is3D: boolean;
   onSelectReservoir: (id: string | null) => void;
+  flyToReservoirId: string | null;
 }
 
 type PopupInfo = {
@@ -49,10 +50,25 @@ export default function MapView({
   searchQuery,
   is3D,
   onSelectReservoir,
+  flyToReservoirId,
 }: MapViewProps) {
   const mapRef = useRef<MapRef>(null);
   const [popupInfo, setPopupInfo] = useState<PopupInfo>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+
+  // Fly to reservoir when selected from dashboard
+  useEffect(() => {
+    if (flyToReservoirId && mapRef.current) {
+      const res = reservoirs.find((r) => r.id === flyToReservoirId);
+      if (res) {
+        mapRef.current.flyTo({
+          center: [res.lng, res.lat],
+          zoom: 11,
+          duration: 1500,
+        });
+      }
+    }
+  }, [flyToReservoirId]);
 
   useEffect(() => {
     if (mapRef.current && is3D) {

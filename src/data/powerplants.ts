@@ -77,15 +77,15 @@ export const powerPlants: PowerPlant[] = [
   },
   {
     id: "pp-007",
-    name: "Elevatória de Traição (São Paulo)",
-    lat: -23.5269,
-    lng: -46.6953,
+    name: "Elevatória São Paulo (ex-Traição)",
+    lat: -23.5875,
+    lng: -46.6930,
     type: "hydroelectric",
     capacity_mw: 0,
     status: "operational",
     source: "EMAE",
     description:
-      "Estação elevatória no encontro dos rios Tietê e Pinheiros. Inverte o fluxo do Pinheiros para direcioná-lo à Billings.",
+      "Estação elevatória no Rio Pinheiros, na altura do Parque do Povo. Inverte o fluxo do Pinheiros para direcioná-lo à Billings. Antiga 'Usina de Traição', renomeada para Usina São Paulo.",
   },
   // === AUTOPRODUÇÃO SABESP ===
   {

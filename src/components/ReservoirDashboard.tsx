@@ -18,11 +18,13 @@ import {
 
 interface ReservoirDashboardProps {
   selectedId: string | null;
+  onSelect: (id: string) => void;
   onClose: () => void;
 }
 
 export default function ReservoirDashboard({
   selectedId,
+  onSelect,
   onClose,
 }: ReservoirDashboardProps) {
   const reservoir = selectedId
@@ -35,14 +37,16 @@ export default function ReservoirDashboard({
         <h2 className="text-base font-bold text-[#005BAA] mb-3">
           Reservatórios - Visão Geral
         </h2>
+        <p className="text-[10px] text-gray-400 mb-3">Clique em um reservatório para ver detalhes e navegar no mapa</p>
         <div className="grid grid-cols-1 gap-2.5 overflow-y-auto flex-1 pr-1">
           {reservoirs.map((r) => (
-            <div
+            <button
               key={r.id}
-              className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+              onClick={() => onSelect(r.id)}
+              className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm hover:shadow-md hover:border-[#005BAA]/30 transition-all text-left cursor-pointer group"
             >
               <div className="flex items-center justify-between mb-1.5">
-                <span className="font-semibold text-sm text-gray-800">
+                <span className="font-semibold text-sm text-gray-800 group-hover:text-[#005BAA] transition-colors">
                   {r.name}
                 </span>
                 <span
@@ -72,7 +76,10 @@ export default function ReservoirDashboard({
                   {r.description}
                 </p>
               )}
-            </div>
+              <div className="text-[10px] text-[#005BAA] mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity font-medium">
+                Clique para ver no mapa e detalhes
+              </div>
+            </button>
           ))}
         </div>
       </div>
@@ -196,35 +203,9 @@ export default function ReservoirDashboard({
               }}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Area
-              type="monotone"
-              dataKey="otimista"
-              stroke="#00A651"
-              fill="#00A651"
-              fillOpacity={0.08}
-              strokeWidth={1.5}
-              name="Otimista"
-              strokeDasharray="4 2"
-            />
-            <Area
-              type="monotone"
-              dataKey="base"
-              stroke="#005BAA"
-              fill="#005BAA"
-              fillOpacity={0.12}
-              strokeWidth={2}
-              name="Base"
-            />
-            <Area
-              type="monotone"
-              dataKey="pessimista"
-              stroke="#EF4444"
-              fill="#EF4444"
-              fillOpacity={0.08}
-              strokeWidth={1.5}
-              name="Pessimista"
-              strokeDasharray="4 2"
-            />
+            <Area type="monotone" dataKey="otimista" stroke="#00A651" fill="#00A651" fillOpacity={0.08} strokeWidth={1.5} name="Otimista" strokeDasharray="4 2" />
+            <Area type="monotone" dataKey="base" stroke="#005BAA" fill="#005BAA" fillOpacity={0.12} strokeWidth={2} name="Base" />
+            <Area type="monotone" dataKey="pessimista" stroke="#EF4444" fill="#EF4444" fillOpacity={0.08} strokeWidth={1.5} name="Pessimista" strokeDasharray="4 2" />
             <ReferenceLine y={30} stroke="#EF4444" strokeDasharray="3 3" />
           </AreaChart>
         </ResponsiveContainer>
