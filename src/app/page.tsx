@@ -44,7 +44,7 @@ export default function Home() {
     useState<ChoroplethMetric>("water_consumption_m3");
 
   const [is3D, setIs3D] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
   const [selectedReservoir, setSelectedReservoir] = useState<string | null>(null);
   const [flyToReservoirId, setFlyToReservoirId] = useState<string | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
@@ -74,6 +74,11 @@ export default function Home() {
     setTimeout(() => setFlyToReservoirId(null), 2000);
   }, []);
 
+  const handleFlyTo = useCallback((lat: number, lng: number, zoom: number) => {
+    setFlyToTarget({ lat, lng, zoom });
+    setTimeout(() => setFlyToTarget(null), 2000);
+  }, []);
+
   return (
     <div className="h-screen w-screen flex overflow-hidden bg-gray-50">
       {/* Left Sidebar - Collapsible */}
@@ -90,8 +95,7 @@ export default function Home() {
             onChoroplethMetricChange={setChoroplethMetric}
             is3D={is3D}
             onToggle3D={() => setIs3D((prev) => !prev)}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
+            onFlyTo={handleFlyTo}
           />
         )}
       </div>
@@ -101,7 +105,7 @@ export default function Home() {
         <MapView
           layers={layers}
           choroplethMetric={choroplethMetric}
-          searchQuery={searchQuery}
+          flyToTarget={flyToTarget}
           is3D={is3D}
           onSelectReservoir={handleSelectReservoir}
           flyToReservoirId={flyToReservoirId}

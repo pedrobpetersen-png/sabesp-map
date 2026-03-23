@@ -30,10 +30,61 @@ const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
 const SP_CENTER = { latitude: -23.2, longitude: -47.0, zoom: 7 };
 
+// === SVG Icon Definitions ===
+
+function circleIcon(color: string, inner: string): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="white" stroke="${color}" stroke-width="2.5"/><g transform="translate(8,8) scale(1.5)" fill="${color}">${inner}</g></svg>`;
+}
+
+function lakeIcon(color: string): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="20" fill="white" stroke="${color}" stroke-width="2.5"/><g transform="translate(7,9) scale(1.875)"><path d="M1 7c2-1.5 5-2.5 7-.5s5 2 7 .5v4c-2 1.5-5 2.5-7 .5S3 9.5 1 11V7z" fill="${color}" opacity="0.2"/><path d="M1 7c2-1.5 5-2.5 7-.5s5 2 7 .5" fill="none" stroke="${color}" stroke-width="1.4" stroke-linecap="round"/><path d="M1 11c2-1.5 5-2.5 7-.5s5 2 7 .5" fill="none" stroke="${color}" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/></g></svg>`;
+}
+
+const MAP_ICON_SVGS: Record<string, string> = {
+  "icon-eta": circleIcon(
+    "#005BAA",
+    `<path d="M8 1.5C8 1.5 3 7 3 10a5 5 0 0010 0c0-3-5-8.5-5-8.5z"/>`
+  ),
+  "icon-ete": circleIcon(
+    "#D97706",
+    `<path d="M2 4h12v2H2z"/><path d="M4 7h8v1.5c0 2.5-1.8 4.5-4 4.5s-4-2-4-4.5V7z"/><circle cx="5" cy="2.5" r="1"/><circle cx="8" cy="2" r="1"/><circle cx="11" cy="2.5" r="1"/>`
+  ),
+  "icon-bolt": circleIcon("#F59E0B", `<path d="M9 1L4 9h4l-1 6 5-8H8l1-6z"/>`),
+  "icon-bolt-green": circleIcon("#10B981", `<path d="M9 1L4 9h4l-1 6 5-8H8l1-6z"/>`),
+  "icon-construction": circleIcon(
+    "#F97316",
+    `<path d="M7 1h2v3h4l-1.5 4H4.5L3 4h4V1z"/><rect x="4" y="9" width="8" height="2" rx="0.5"/><rect x="5" y="11" width="1.5" height="4"/><rect x="9.5" y="11" width="1.5" height="4"/><rect x="3" y="14.5" width="10" height="1.5" rx="0.5"/>`
+  ),
+  "icon-reservoir-green": lakeIcon("#00A651"),
+  "icon-reservoir-amber": lakeIcon("#F59E0B"),
+  "icon-reservoir-red": lakeIcon("#EF4444"),
+};
+
+function loadSvgIcon(
+  map: mapboxgl.Map,
+  name: string,
+  svgString: string
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      if (!map.hasImage(name)) {
+        map.addImage(name, img);
+      }
+      resolve();
+    };
+    img.onerror = reject;
+    img.src =
+      "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgString);
+  });
+}
+
+// === Component ===
+
 interface MapViewProps {
   layers: LayerVisibility;
   choroplethMetric: ChoroplethMetric;
-  searchQuery: string;
+  flyToTarget: { lat: number; lng: number; zoom: number } | null;
   is3D: boolean;
   onSelectReservoir: (id: string | null) => void;
   flyToReservoirId: string | null;
@@ -48,7 +99,7 @@ type PopupInfo = {
 export default function MapView({
   layers,
   choroplethMetric,
-  searchQuery,
+  flyToTarget,
   is3D,
   onSelectReservoir,
   flyToReservoirId,
@@ -56,6 +107,7 @@ export default function MapView({
   const mapRef = useRef<MapRef>(null);
   const [popupInfo, setPopupInfo] = useState<PopupInfo>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [iconsLoaded, setIconsLoaded] = useState(false);
 
   // ResizeObserver to auto-resize map when container changes (sidebar collapse)
   useEffect(() => {
@@ -70,6 +122,28 @@ export default function MapView({
     observer.observe(parent);
     return () => observer.disconnect();
   }, [mapLoaded]);
+
+  // Load SVG icons into map
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    const map = mapRef.current.getMap();
+    Promise.all(
+      Object.entries(MAP_ICON_SVGS).map(([name, svg]) =>
+        loadSvgIcon(map, name, svg)
+      )
+    ).then(() => setIconsLoaded(true));
+  }, [mapLoaded]);
+
+  // Fly to search result
+  useEffect(() => {
+    if (flyToTarget && mapRef.current) {
+      mapRef.current.flyTo({
+        center: [flyToTarget.lng, flyToTarget.lat],
+        zoom: flyToTarget.zoom,
+        duration: 1500,
+      });
+    }
+  }, [flyToTarget]);
 
   // Fly to reservoir when selected from dashboard
   useEffect(() => {
@@ -92,48 +166,6 @@ export default function MapView({
       mapRef.current.getMap().easeTo({ pitch: 0, bearing: 0, duration: 1000 });
     }
   }, [is3D]);
-
-  useEffect(() => {
-    if (searchQuery && mapRef.current) {
-      const q = searchQuery.toLowerCase();
-      const eta = etas.find(
-        (e) =>
-          e.name.toLowerCase().includes(q) ||
-          e.municipality.toLowerCase().includes(q)
-      );
-      if (eta) {
-        mapRef.current.flyTo({ center: [eta.lng, eta.lat], zoom: 14, duration: 1500 });
-        return;
-      }
-      const ete = etes.find(
-        (e) =>
-          e.name.toLowerCase().includes(q) ||
-          e.municipality.toLowerCase().includes(q)
-      );
-      if (ete) {
-        mapRef.current.flyTo({ center: [ete.lng, ete.lat], zoom: 14, duration: 1500 });
-        return;
-      }
-      const res = reservoirs.find((r) => r.name.toLowerCase().includes(q));
-      if (res) {
-        mapRef.current.flyTo({ center: [res.lng, res.lat], zoom: 11, duration: 1500 });
-        return;
-      }
-      const pp = powerPlants.find(
-        (p) => p.name.toLowerCase().includes(q)
-      );
-      if (pp) {
-        mapRef.current.flyTo({ center: [pp.lng, pp.lat], zoom: 14, duration: 1500 });
-        return;
-      }
-      const cw = constructionWorks.find(
-        (c) => c.name.toLowerCase().includes(q)
-      );
-      if (cw) {
-        mapRef.current.flyTo({ center: [cw.lng, cw.lat], zoom: 14, duration: 1500 });
-      }
-    }
-  }, [searchQuery]);
 
   // === GeoJSON data ===
 
@@ -439,12 +471,16 @@ export default function MapView({
       mapStyle="mapbox://styles/mapbox/light-v11"
       mapboxAccessToken={MAPBOX_TOKEN}
       interactiveLayerIds={[
-        "eta-circles",
-        "ete-circles",
-        "reservoir-circles",
+        ...(iconsLoaded
+          ? [
+              "eta-symbols",
+              "ete-symbols",
+              "reservoir-symbols",
+              "power-plant-symbols",
+              "construction-symbols",
+            ]
+          : []),
         "region-fill",
-        "power-plant-circles",
-        "construction-circles",
       ]}
       onClick={handleClick}
       onLoad={() => setMapLoaded(true)}
@@ -566,18 +602,23 @@ export default function MapView({
         </Source>
       )}
 
-      {/* ETAs */}
-      {layers.etas && (
+      {/* ETAs - SVG Icons */}
+      {layers.etas && iconsLoaded && (
         <Source id="etas" type="geojson" data={etaGeoJSON}>
           <Layer
-            id="eta-circles"
-            type="circle"
-            paint={{
-              "circle-radius": ["interpolate", ["linear"], ["get", "capacity"], 0.35, 6, 33, 20],
-              "circle-color": SABESP.blue,
-              "circle-stroke-color": "#FFFFFF",
-              "circle-stroke-width": 2,
-              "circle-opacity": 0.9,
+            id="eta-symbols"
+            type="symbol"
+            layout={{
+              "icon-image": "icon-eta",
+              "icon-size": [
+                "interpolate",
+                ["linear"],
+                ["get", "capacity"],
+                0.35, 0.45,
+                33, 1.1,
+              ],
+              "icon-allow-overlap": true,
+              "icon-ignore-placement": true,
             }}
           />
           <Layer
@@ -586,7 +627,7 @@ export default function MapView({
             layout={{
               "text-field": ["get", "name"],
               "text-size": 11,
-              "text-offset": [0, 1.5],
+              "text-offset": [0, 2],
               "text-anchor": "top",
             }}
             paint={{
@@ -599,18 +640,23 @@ export default function MapView({
         </Source>
       )}
 
-      {/* ETEs */}
-      {layers.etes && (
+      {/* ETEs - SVG Icons */}
+      {layers.etes && iconsLoaded && (
         <Source id="etes" type="geojson" data={eteGeoJSON}>
           <Layer
-            id="ete-circles"
-            type="circle"
-            paint={{
-              "circle-radius": ["interpolate", ["linear"], ["get", "capacity"], 0.3, 6, 12, 18],
-              "circle-color": "#D97706",
-              "circle-stroke-color": "#FFFFFF",
-              "circle-stroke-width": 2,
-              "circle-opacity": 0.9,
+            id="ete-symbols"
+            type="symbol"
+            layout={{
+              "icon-image": "icon-ete",
+              "icon-size": [
+                "interpolate",
+                ["linear"],
+                ["get", "capacity"],
+                0.3, 0.45,
+                12, 0.9,
+              ],
+              "icon-allow-overlap": true,
+              "icon-ignore-placement": true,
             }}
           />
           <Layer
@@ -619,7 +665,7 @@ export default function MapView({
             layout={{
               "text-field": ["get", "name"],
               "text-size": 11,
-              "text-offset": [0, 1.5],
+              "text-offset": [0, 2],
               "text-anchor": "top",
             }}
             paint={{
@@ -632,18 +678,24 @@ export default function MapView({
         </Source>
       )}
 
-      {/* Reservoirs */}
-      {layers.reservoirs && (
+      {/* Reservoirs - Lake SVG Icons */}
+      {layers.reservoirs && iconsLoaded && (
         <Source id="reservoirs" type="geojson" data={reservoirGeoJSON}>
           <Layer
-            id="reservoir-circles"
-            type="circle"
-            paint={{
-              "circle-radius": 16,
-              "circle-color": ["get", "color"],
-              "circle-stroke-color": "#FFFFFF",
-              "circle-stroke-width": 3,
-              "circle-opacity": 0.9,
+            id="reservoir-symbols"
+            type="symbol"
+            layout={{
+              "icon-image": [
+                "case",
+                [">=", ["get", "current_level"], 60],
+                "icon-reservoir-green",
+                [">=", ["get", "current_level"], 30],
+                "icon-reservoir-amber",
+                "icon-reservoir-red",
+              ],
+              "icon-size": 0.85,
+              "icon-allow-overlap": true,
+              "icon-ignore-placement": true,
             }}
           />
           <Layer
@@ -658,7 +710,7 @@ export default function MapView({
                 "%",
               ],
               "text-size": 11,
-              "text-offset": [0, 2.5],
+              "text-offset": [0, 2.8],
               "text-anchor": "top",
               "text-line-height": 1.3,
             }}
@@ -672,26 +724,27 @@ export default function MapView({
         </Source>
       )}
 
-      {/* Power Plants */}
-      {layers.power_plants && (
+      {/* Power Plants - SVG Icons */}
+      {layers.power_plants && iconsLoaded && (
         <Source id="power-plants" type="geojson" data={powerPlantGeoJSON}>
           <Layer
-            id="power-plant-circles"
-            type="circle"
-            paint={{
-              "circle-radius": [
+            id="power-plant-symbols"
+            type="symbol"
+            layout={{
+              "icon-image": [
                 "case",
-                ["==", ["get", "pp_type"], "hydroelectric"], 12,
-                8,
+                ["==", ["get", "pp_type"], "hydroelectric"],
+                "icon-bolt",
+                "icon-bolt-green",
               ],
-              "circle-color": [
+              "icon-size": [
                 "case",
-                ["==", ["get", "pp_type"], "hydroelectric"], "#F59E0B",
-                "#10B981",
+                ["==", ["get", "pp_type"], "hydroelectric"],
+                0.65,
+                0.5,
               ],
-              "circle-stroke-color": "#FFFFFF",
-              "circle-stroke-width": 2,
-              "circle-opacity": 0.9,
+              "icon-allow-overlap": true,
+              "icon-ignore-placement": true,
             }}
           />
           <Layer
@@ -714,23 +767,17 @@ export default function MapView({
         </Source>
       )}
 
-      {/* Construction Works */}
-      {layers.construction_works && (
+      {/* Construction Works - SVG Icons */}
+      {layers.construction_works && iconsLoaded && (
         <Source id="construction" type="geojson" data={constructionGeoJSON}>
           <Layer
-            id="construction-circles"
-            type="circle"
-            paint={{
-              "circle-radius": 10,
-              "circle-color": [
-                "case",
-                ["==", ["get", "status"], "advanced"], "#F97316",
-                ["==", ["get", "status"], "in_progress"], "#FB923C",
-                "#FDBA74",
-              ],
-              "circle-stroke-color": "#FFFFFF",
-              "circle-stroke-width": 2.5,
-              "circle-opacity": 0.9,
+            id="construction-symbols"
+            type="symbol"
+            layout={{
+              "icon-image": "icon-construction",
+              "icon-size": 0.55,
+              "icon-allow-overlap": true,
+              "icon-ignore-placement": true,
             }}
           />
           <Layer

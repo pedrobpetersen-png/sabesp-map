@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { LayerVisibility, ChoroplethMetric } from "@/types";
 import { etas } from "@/data/etas";
 import { etes } from "@/data/etes";
@@ -15,8 +16,7 @@ interface SidebarProps {
   onChoroplethMetricChange: (metric: ChoroplethMetric) => void;
   is3D: boolean;
   onToggle3D: () => void;
-  searchQuery: string;
-  onSearchChange: (q: string) => void;
+  onFlyTo: (lat: number, lng: number, zoom: number) => void;
 }
 
 // SVG icon components for legend differentiation
@@ -41,10 +41,10 @@ function IconSewage({ className, style }: { className?: string; style?: React.CS
 
 function IconReservoir({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <svg className={className} style={style} viewBox="0 0 16 16" fill="currentColor">
-      <path d="M1 10c1.5-1 3-1.5 4.5-.5s3 1 4.5 0 3-.5 4.5.5v3H1v-3z" opacity="0.4" />
-      <path d="M1 8c1.5-1 3-1.5 4.5-.5s3 1 4.5 0 3-.5 4.5.5v3c-1.5-1-3-1.5-4.5-.5s-3 1-4.5 0S2.5 9 1 10V8z" />
-      <path d="M3 4l2-2h6l2 2v3H3V4z" opacity="0.3" />
+    <svg className={className} style={style} viewBox="0 0 16 16">
+      <path d="M1 7c2-1.5 5-2.5 7-.5s5 2 7 .5v4c-2 1.5-5 2.5-7 .5S3 9.5 1 11V7z" fill="currentColor" opacity="0.2" />
+      <path d="M1 7c2-1.5 5-2.5 7-.5s5 2 7 .5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M1 11c2-1.5 5-2.5 7-.5s5 2 7 .5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
     </svg>
   );
 }
@@ -112,6 +112,15 @@ const metricOptions: { value: ChoroplethMetric; label: string }[] = [
   { value: "sewage_treatment_pct", label: "% Tratamento de Esgoto" },
 ];
 
+type SearchResult = {
+  name: string;
+  sub: string;
+  category: string;
+  lat: number;
+  lng: number;
+  zoom: number;
+};
+
 export default function Sidebar({
   layers,
   onToggleLayer,
@@ -119,12 +128,63 @@ export default function Sidebar({
   onChoroplethMetricChange,
   is3D,
   onToggle3D,
-  searchQuery,
-  onSearchChange,
+  onFlyTo,
 }: SidebarProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+
   const totalCapacityETA = etas.reduce((s, e) => s + e.capacity_m3s, 0);
   const totalCapacityETE = etes.reduce((s, e) => s + e.capacity_m3s, 0);
   const totalEnergyMW = powerPlants.reduce((s, p) => s + p.capacity_mw, 0);
+
+  const allAssets: SearchResult[] = useMemo(
+    () => [
+      ...etas.map((e) => ({ name: e.name, sub: e.municipality, category: "ETA", lat: e.lat, lng: e.lng, zoom: 14 })),
+      ...etes.map((e) => ({ name: e.name, sub: e.municipality, category: "ETE", lat: e.lat, lng: e.lng, zoom: 14 })),
+      ...reservoirs.map((r) => ({ name: r.name, sub: "", category: "Reservatório", lat: r.lat, lng: r.lng, zoom: 11 })),
+      ...powerPlants.map((p) => ({ name: p.name, sub: p.source, category: "Usina", lat: p.lat, lng: p.lng, zoom: 14 })),
+      ...constructionWorks.map((c) => ({
+        name: c.name,
+        sub: c.status === "advanced" ? "Avançada" : c.status === "in_progress" ? "Em andamento" : "Planejamento",
+        category: "Obra",
+        lat: c.lat,
+        lng: c.lng,
+        zoom: 12,
+      })),
+      ...regions.map((r) => ({
+        name: r.name,
+        sub: r.municipality,
+        category: "Região",
+        lat: r.coordinates[0][0][1],
+        lng: r.coordinates[0][0][0],
+        zoom: 10,
+      })),
+    ],
+    []
+  );
+
+  const q = searchQuery.toLowerCase();
+  const filteredResults =
+    searchQuery.length >= 1
+      ? allAssets
+          .filter((a) => a.name.toLowerCase().includes(q) || a.sub.toLowerCase().includes(q))
+          .slice(0, 8)
+      : [];
+
+  const handleSelect = (result: SearchResult) => {
+    onFlyTo(result.lat, result.lng, result.zoom);
+    setSearchQuery(result.name);
+    setShowDropdown(false);
+  };
+
+  const categoryColors: Record<string, string> = {
+    ETA: "bg-blue-100 text-blue-700",
+    ETE: "bg-amber-100 text-amber-700",
+    "Reservatório": "bg-green-100 text-green-700",
+    Usina: "bg-yellow-100 text-yellow-700",
+    Obra: "bg-orange-100 text-orange-700",
+    "Região": "bg-purple-100 text-purple-700",
+  };
 
   return (
     <div className="flex flex-col gap-3 h-full overflow-y-auto">
@@ -139,14 +199,54 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Search */}
-      <input
-        type="text"
-        value={searchQuery}
-        onChange={(e) => onSearchChange(e.target.value)}
-        placeholder="Buscar ETA, ETE, usina, obra, município..."
-        className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#005BAA] focus:ring-1 focus:ring-[#005BAA]/20 transition-colors"
-      />
+      {/* Search with autocomplete */}
+      <div className="relative">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setShowDropdown(true);
+          }}
+          onFocus={() => searchQuery.length >= 1 && setShowDropdown(true)}
+          onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+          placeholder="Buscar ETA, ETE, reservatório, obra..."
+          className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#005BAA] focus:ring-1 focus:ring-[#005BAA]/20 transition-colors"
+        />
+        <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+
+        {/* Dropdown */}
+        {showDropdown && filteredResults.length > 0 && (
+          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+            {filteredResults.map((result, i) => (
+              <button
+                key={`${result.category}-${result.name}-${i}`}
+                className="w-full text-left px-3 py-2 hover:bg-[#005BAA]/5 text-sm flex justify-between items-center border-b border-gray-50 last:border-0 transition-colors"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => handleSelect(result)}
+              >
+                <div className="flex flex-col min-w-0 flex-1 mr-2">
+                  <span className="text-gray-800 truncate">{result.name}</span>
+                  {result.sub && (
+                    <span className="text-[10px] text-gray-400 truncate">{result.sub}</span>
+                  )}
+                </div>
+                <span className={`text-[9px] px-1.5 py-0.5 rounded-full shrink-0 font-medium ${categoryColors[result.category] || "bg-gray-100 text-gray-600"}`}>
+                  {result.category}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {showDropdown && searchQuery.length >= 1 && filteredResults.length === 0 && (
+          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg px-3 py-3 text-xs text-gray-400 text-center">
+            Nenhum resultado encontrado
+          </div>
+        )}
+      </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-2">
