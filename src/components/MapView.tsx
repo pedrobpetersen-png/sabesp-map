@@ -15,6 +15,7 @@ import { reservoirs } from "@/data/reservoirs";
 import { pipelines } from "@/data/pipelines";
 import { regions } from "@/data/regions";
 import { powerPlants } from "@/data/powerplants";
+import { constructionWorks } from "@/data/construction";
 import {
   LayerVisibility,
   ChoroplethMetric,
@@ -55,6 +56,20 @@ export default function MapView({
   const mapRef = useRef<MapRef>(null);
   const [popupInfo, setPopupInfo] = useState<PopupInfo>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+
+  // ResizeObserver to auto-resize map when container changes (sidebar collapse)
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    const map = mapRef.current.getMap();
+    const container = map.getContainer();
+    const parent = container.parentElement;
+    if (!parent) return;
+    const observer = new ResizeObserver(() => {
+      map.resize();
+    });
+    observer.observe(parent);
+    return () => observer.disconnect();
+  }, [mapLoaded]);
 
   // Fly to reservoir when selected from dashboard
   useEffect(() => {
@@ -109,6 +124,13 @@ export default function MapView({
       );
       if (pp) {
         mapRef.current.flyTo({ center: [pp.lng, pp.lat], zoom: 14, duration: 1500 });
+        return;
+      }
+      const cw = constructionWorks.find(
+        (c) => c.name.toLowerCase().includes(q)
+      );
+      if (cw) {
+        mapRef.current.flyTo({ center: [cw.lng, cw.lat], zoom: 14, duration: 1500 });
       }
     }
   }, [searchQuery]);
@@ -186,6 +208,25 @@ export default function MapView({
     })),
   };
 
+  const constructionGeoJSON: GeoJSON.FeatureCollection = {
+    type: "FeatureCollection",
+    features: constructionWorks.map((c) => ({
+      type: "Feature" as const,
+      properties: {
+        id: c.id,
+        name: c.name,
+        cw_type: c.type,
+        status: c.status,
+        progress_pct: c.progress_pct,
+        investment_brl_mi: c.investment_brl_mi,
+        expected_completion: c.expected_completion,
+        description: c.description,
+        type: "construction",
+      },
+      geometry: { type: "Point" as const, coordinates: [c.lng, c.lat] },
+    })),
+  };
+
   const waterPipelines = pipelines.filter((p) => p.type === "water");
   const sewagePipelines = pipelines.filter((p) => p.type === "sewage");
 
@@ -222,6 +263,7 @@ export default function MapView({
         municipality: r.municipality,
         value: r[choroplethMetric],
         color: choroplethColor(r[choroplethMetric] as number, minVal, maxVal, isPct),
+        water_coverage_pct: r.water_coverage_pct,
         water_consumption_m3: r.water_consumption_m3,
         sewage_generation_m3: r.sewage_generation_m3,
         sewage_collection_pct: r.sewage_collection_pct,
@@ -332,6 +374,34 @@ export default function MapView({
             </div>
           ),
         });
+      } else if (props.type === "construction") {
+        const statusLabel = props.status === "advanced" ? "Avançada" : props.status === "in_progress" ? "Em andamento" : "Planejamento";
+        const statusColor = props.status === "advanced" ? "text-green-600" : props.status === "in_progress" ? "text-amber-600" : "text-gray-500";
+        setPopupInfo({
+          lat: coords.lat,
+          lng: coords.lng,
+          content: (
+            <div className="text-sm text-gray-800">
+              <h3 className="font-bold text-orange-600 text-base">{props.name}</h3>
+              <p className="text-xs text-gray-500 mt-1 mb-2">{props.description}</p>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                <span className="text-gray-500">Status</span>
+                <span className={`font-medium ${statusColor}`}>{statusLabel}</span>
+                <span className="text-gray-500">Progresso</span>
+                <span className="font-medium">{props.progress_pct}%</span>
+                <span className="text-gray-500">Investimento</span>
+                <span className="font-medium">R$ {props.investment_brl_mi} mi</span>
+                <span className="text-gray-500">Conclusão prev.</span>
+                <span className="font-medium">{props.expected_completion}</span>
+              </div>
+              <div className="mt-2">
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="h-2 rounded-full bg-orange-500" style={{ width: `${props.progress_pct}%` }} />
+                </div>
+              </div>
+            </div>
+          ),
+        });
       } else if (props.name && props.population) {
         setPopupInfo({
           lat: coords.lat,
@@ -342,13 +412,15 @@ export default function MapView({
               <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs mt-2">
                 <span className="text-gray-500">População</span>
                 <span className="font-medium">{Number(props.population).toLocaleString()}</span>
+                <span className="text-gray-500">Cobertura água</span>
+                <span className="font-medium text-[#005BAA]">{props.water_coverage_pct}%</span>
                 <span className="text-gray-500">Consumo água</span>
                 <span className="font-medium">{(Number(props.water_consumption_m3) / 1_000_000).toFixed(1)} M m³/mês</span>
                 <span className="text-gray-500">Esgoto gerado</span>
                 <span className="font-medium">{(Number(props.sewage_generation_m3) / 1_000_000).toFixed(1)} M m³/mês</span>
-                <span className="text-gray-500">Coleta</span>
+                <span className="text-gray-500">Coleta esgoto</span>
                 <span className="font-medium">{props.sewage_collection_pct}%</span>
-                <span className="text-gray-500">Tratamento</span>
+                <span className="text-gray-500">Tratamento esgoto</span>
                 <span className="font-medium">{props.sewage_treatment_pct}%</span>
               </div>
             </div>
@@ -372,6 +444,7 @@ export default function MapView({
         "reservoir-circles",
         "region-fill",
         "power-plant-circles",
+        "construction-circles",
       ]}
       onClick={handleClick}
       onLoad={() => setMapLoaded(true)}
@@ -633,6 +706,45 @@ export default function MapView({
             }}
             paint={{
               "text-color": "#92400E",
+              "text-halo-color": "#FFFFFF",
+              "text-halo-width": 1.5,
+            }}
+            minzoom={9}
+          />
+        </Source>
+      )}
+
+      {/* Construction Works */}
+      {layers.construction_works && (
+        <Source id="construction" type="geojson" data={constructionGeoJSON}>
+          <Layer
+            id="construction-circles"
+            type="circle"
+            paint={{
+              "circle-radius": 10,
+              "circle-color": [
+                "case",
+                ["==", ["get", "status"], "advanced"], "#F97316",
+                ["==", ["get", "status"], "in_progress"], "#FB923C",
+                "#FDBA74",
+              ],
+              "circle-stroke-color": "#FFFFFF",
+              "circle-stroke-width": 2.5,
+              "circle-opacity": 0.9,
+            }}
+          />
+          <Layer
+            id="construction-labels"
+            type="symbol"
+            layout={{
+              "text-field": ["concat", ["get", "name"], "\n", ["to-string", ["get", "progress_pct"]], "%"],
+              "text-size": 10,
+              "text-offset": [0, 1.8],
+              "text-anchor": "top",
+              "text-line-height": 1.3,
+            }}
+            paint={{
+              "text-color": "#9A3412",
               "text-halo-color": "#FFFFFF",
               "text-halo-width": 1.5,
             }}

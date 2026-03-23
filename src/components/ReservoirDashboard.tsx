@@ -20,14 +20,12 @@ interface ReservoirDashboardProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onClose: () => void;
-  viewMode: "investor" | "engineer";
 }
 
 export default function ReservoirDashboard({
   selectedId,
   onSelect,
   onClose,
-  viewMode,
 }: ReservoirDashboardProps) {
   const reservoir = selectedId
     ? reservoirs.find((r) => r.id === selectedId)

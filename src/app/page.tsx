@@ -11,6 +11,7 @@ import { etas } from "@/data/etas";
 import { etes } from "@/data/etes";
 import { powerPlants } from "@/data/powerplants";
 import { reservoirs } from "@/data/reservoirs";
+import { constructionWorks } from "@/data/construction";
 import { getLevelColor } from "@/lib/utils";
 
 const MapView = dynamic(() => import("@/components/MapView"), {
@@ -26,7 +27,6 @@ const MapView = dynamic(() => import("@/components/MapView"), {
 });
 
 type RightTab = "reservoirs" | "universalization" | "comparison";
-type ViewMode = "investor" | "engineer";
 
 export default function Home() {
   const [layers, setLayers] = useState<LayerVisibility>({
@@ -37,6 +37,7 @@ export default function Home() {
     pipelines_sewage: true,
     choropleth: true,
     power_plants: true,
+    construction_works: true,
   });
 
   const [choroplethMetric, setChoroplethMetric] =
@@ -49,7 +50,6 @@ export default function Home() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [showRightPanel, setShowRightPanel] = useState(true);
   const [rightTab, setRightTab] = useState<RightTab>("reservoirs");
-  const [viewMode, setViewMode] = useState<ViewMode>("engineer");
 
   const avgReservoirLevel = useMemo(() => {
     const sum = reservoirs.reduce((s, r) => s + r.current_level_pct, 0);
@@ -78,8 +78,8 @@ export default function Home() {
     <div className="h-screen w-screen flex overflow-hidden bg-gray-50">
       {/* Left Sidebar - Collapsible */}
       <div
-        className={`bg-white border-r border-gray-200 flex flex-col shadow-sm transition-all duration-300 ease-in-out overflow-hidden ${
-          showSidebar ? "w-[270px] min-w-[270px] p-4" : "w-0 min-w-0 p-0"
+        className={`bg-white border-r border-gray-200 flex flex-col shadow-sm transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
+          showSidebar ? "w-[270px] p-4" : "w-0 p-0"
         }`}
       >
         {showSidebar && (
@@ -92,13 +92,12 @@ export default function Home() {
             onToggle3D={() => setIs3D((prev) => !prev)}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
-            viewMode={viewMode}
           />
         )}
       </div>
 
       {/* Map */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative min-w-0">
         <MapView
           layers={layers}
           choroplethMetric={choroplethMetric}
@@ -126,8 +125,26 @@ export default function Home() {
           </svg>
         </button>
 
+        {/* Right sidebar toggle */}
+        <button
+          onClick={() => setShowRightPanel((prev) => !prev)}
+          className="absolute top-1/2 right-0 -translate-y-1/2 z-10 bg-white/95 backdrop-blur-sm border border-gray-200 border-r-0 rounded-l-lg px-1.5 py-4 shadow-md hover:bg-[#005BAA]/5 hover:border-[#005BAA]/30 transition-colors group"
+          title={showRightPanel ? "Ocultar painel direito" : "Mostrar painel direito"}
+        >
+          <svg
+            className={`w-4 h-4 text-gray-400 group-hover:text-[#005BAA] transition-transform duration-300 ${
+              showRightPanel ? "" : "rotate-180"
+            }`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+
         {/* Top bar */}
-        <div className="absolute top-4 left-10 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl px-4 py-2 flex items-center gap-4 shadow-md">
+        <div className="absolute top-4 left-10 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl px-4 py-2 flex items-center gap-4 shadow-md z-10">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded bg-[#005BAA] flex items-center justify-center">
               <span className="text-white text-[10px] font-bold">S</span>
@@ -152,58 +169,12 @@ export default function Home() {
               <span className="text-gray-400">Usinas</span>
               <span className="text-amber-500 font-bold ml-1">{powerPlants.length}</span>
             </div>
-          </div>
-          <div className="h-5 w-px bg-gray-200" />
-          {/* Mode toggle */}
-          <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
-            <button
-              onClick={() => setViewMode("engineer")}
-              className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-all ${
-                viewMode === "engineer"
-                  ? "bg-[#005BAA] text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Engenheiro
-            </button>
-            <button
-              onClick={() => setViewMode("investor")}
-              className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-all ${
-                viewMode === "investor"
-                  ? "bg-[#00A651] text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Investidor
-            </button>
+            <div>
+              <span className="text-gray-400">Obras</span>
+              <span className="text-orange-500 font-bold ml-1">{constructionWorks.length}</span>
+            </div>
           </div>
         </div>
-
-        {/* Right panel toggle */}
-        <button
-          onClick={() => setShowRightPanel((prev) => !prev)}
-          className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-600 hover:text-[#005BAA] hover:border-[#005BAA] transition-colors shadow-md font-medium z-10"
-        >
-          {showRightPanel ? "Ocultar Painel" : "Painel de Dados"}
-        </button>
-
-        {/* Right panel toggle arrow (when collapsed) */}
-        {!showRightPanel && (
-          <button
-            onClick={() => setShowRightPanel(true)}
-            className="absolute top-1/2 right-0 -translate-y-1/2 z-10 bg-white/95 backdrop-blur-sm border border-gray-200 border-r-0 rounded-l-lg px-1.5 py-4 shadow-md hover:bg-[#005BAA]/5 hover:border-[#005BAA]/30 transition-colors group"
-            title="Mostrar painel direito"
-          >
-            <svg
-              className="w-4 h-4 text-gray-400 group-hover:text-[#005BAA]"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-        )}
 
         {/* Water Status Bar */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl px-5 py-2 flex items-center gap-4 shadow-md z-10">
@@ -233,15 +204,15 @@ export default function Home() {
           <div className="h-4 w-px bg-gray-200" />
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-[10px] text-gray-400">Simulação em tempo real</span>
+            <span className="text-[10px] text-gray-400">Atualizado em tempo real</span>
           </div>
         </div>
       </div>
 
       {/* Right Panel - Collapsible */}
       <div
-        className={`bg-gray-50 border-l border-gray-200 flex flex-col transition-all duration-300 ease-in-out overflow-hidden ${
-          showRightPanel ? "w-[360px] min-w-[360px]" : "w-0 min-w-0"
+        className={`bg-gray-50 border-l border-gray-200 flex flex-col transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
+          showRightPanel ? "w-[360px]" : "w-0"
         }`}
       >
         {showRightPanel && (
@@ -287,15 +258,10 @@ export default function Home() {
                   selectedId={selectedReservoir}
                   onSelect={handleDashboardSelect}
                   onClose={() => setSelectedReservoir(null)}
-                  viewMode={viewMode}
                 />
               )}
-              {rightTab === "universalization" && (
-                <UniversalizationPanel viewMode={viewMode} />
-              )}
-              {rightTab === "comparison" && (
-                <RegionalComparison viewMode={viewMode} />
-              )}
+              {rightTab === "universalization" && <UniversalizationPanel />}
+              {rightTab === "comparison" && <RegionalComparison />}
             </div>
           </>
         )}

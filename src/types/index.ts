@@ -66,10 +66,24 @@ export interface PowerPlant {
   description: string;
 }
 
+export interface ConstructionWork {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  type: "expansion" | "treatment" | "pipeline" | "depollution" | "loss_reduction";
+  status: "planning" | "in_progress" | "advanced";
+  progress_pct: number;
+  investment_brl_mi: number;
+  expected_completion: string;
+  description: string;
+}
+
 export interface RegionData {
   id: string;
   name: string;
   municipality: string;
+  water_coverage_pct: number;
   water_consumption_m3: number;
   sewage_generation_m3: number;
   sewage_collection_pct: number;
@@ -86,6 +100,7 @@ export type LayerVisibility = {
   pipelines_sewage: boolean;
   choropleth: boolean;
   power_plants: boolean;
+  construction_works: boolean;
 };
 
 export type ChoroplethMetric =

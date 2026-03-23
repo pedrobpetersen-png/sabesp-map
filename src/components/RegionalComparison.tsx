@@ -13,9 +13,7 @@ import {
   Cell,
 } from "recharts";
 
-interface RegionalComparisonProps {
-  viewMode: "investor" | "engineer";
-}
+interface RegionalComparisonProps {}
 
 type ComparisonMetric =
   | "sewage_collection_pct"
@@ -59,7 +57,7 @@ function getSemaphoreColor(collection: number, treatment: number): string {
   return "#EF4444"; // red
 }
 
-export default function RegionalComparison({ viewMode }: RegionalComparisonProps) {
+export default function RegionalComparison({}: RegionalComparisonProps) {
   const [metric, setMetric] = useState<ComparisonMetric>("sewage_treatment_pct");
   const config = metricConfig[metric];
 
@@ -126,14 +124,12 @@ export default function RegionalComparison({ viewMode }: RegionalComparisonProps
                   <span>Tratamento</span>
                   <span className="font-medium text-gray-600">{r.sewage_treatment_pct}%</span>
                 </div>
-                {viewMode === "engineer" && (
-                  <div className="flex justify-between">
-                    <span>Pop.</span>
-                    <span className="font-medium text-gray-600">
-                      {(r.population / 1000).toFixed(0)}k
-                    </span>
-                  </div>
-                )}
+                <div className="flex justify-between">
+                  <span>Pop.</span>
+                  <span className="font-medium text-gray-600">
+                    {(r.population / 1000).toFixed(0)}k
+                  </span>
+                </div>
               </div>
             </div>
           );

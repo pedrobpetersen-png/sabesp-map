@@ -5,6 +5,7 @@ import { etas } from "@/data/etas";
 import { etes } from "@/data/etes";
 import { reservoirs } from "@/data/reservoirs";
 import { powerPlants } from "@/data/powerplants";
+import { constructionWorks } from "@/data/construction";
 import { regions } from "@/data/regions";
 
 interface SidebarProps {
@@ -16,7 +17,6 @@ interface SidebarProps {
   onToggle3D: () => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
-  viewMode: "investor" | "engineer";
 }
 
 // SVG icon components for legend differentiation
@@ -76,6 +76,18 @@ function IconRegion({ className, style }: { className?: string; style?: React.CS
   );
 }
 
+function IconConstruction({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg className={className} style={style} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M7 1h2v3h4l-1.5 4H4.5L3 4h4V1z" />
+      <rect x="4" y="9" width="8" height="2" rx="0.5" />
+      <rect x="5" y="11" width="1.5" height="4" />
+      <rect x="9.5" y="11" width="1.5" height="4" />
+      <rect x="3" y="14.5" width="10" height="1.5" rx="0.5" />
+    </svg>
+  );
+}
+
 const layerConfig: {
   key: keyof LayerVisibility;
   label: string;
@@ -89,6 +101,7 @@ const layerConfig: {
   { key: "pipelines_water", label: "Adutoras (Água)", colorClass: "bg-[#4A90D9]", colorHex: "#4A90D9", Icon: IconPipe },
   { key: "pipelines_sewage", label: "Coletores (Esgoto)", colorClass: "bg-[#8B5CF6]", colorHex: "#8B5CF6", Icon: IconPipe },
   { key: "power_plants", label: "Geração de Energia", colorClass: "bg-[#F59E0B]", colorHex: "#F59E0B", Icon: IconBolt },
+  { key: "construction_works", label: "Obras em Andamento", colorClass: "bg-[#F97316]", colorHex: "#F97316", Icon: IconConstruction },
   { key: "choropleth", label: "Regiões (Dados)", colorClass: "bg-[#00A651]", colorHex: "#00A651", Icon: IconRegion },
 ];
 
@@ -108,7 +121,6 @@ export default function Sidebar({
   onToggle3D,
   searchQuery,
   onSearchChange,
-  viewMode,
 }: SidebarProps) {
   const totalCapacityETA = etas.reduce((s, e) => s + e.capacity_m3s, 0);
   const totalCapacityETE = etes.reduce((s, e) => s + e.capacity_m3s, 0);
@@ -132,7 +144,7 @@ export default function Sidebar({
         type="text"
         value={searchQuery}
         onChange={(e) => onSearchChange(e.target.value)}
-        placeholder="Buscar ETA, ETE, usina, município..."
+        placeholder="Buscar ETA, ETE, usina, obra, município..."
         className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#005BAA] focus:ring-1 focus:ring-[#005BAA]/20 transition-colors"
       />
 
@@ -159,11 +171,11 @@ export default function Sidebar({
             <div className="text-[10px] text-gray-500">Reservatórios</div>
           </div>
         </div>
-        <div className="bg-yellow-50 border border-yellow-200/50 rounded-lg p-2 flex items-center gap-2">
-          <IconBolt className="w-5 h-5 text-amber-600 shrink-0" />
+        <div className="bg-orange-50 border border-orange-200/50 rounded-lg p-2 flex items-center gap-2">
+          <IconConstruction className="w-5 h-5 text-orange-600 shrink-0" />
           <div>
-            <div className="text-lg font-bold text-amber-600 leading-none">{powerPlants.length}</div>
-            <div className="text-[10px] text-gray-500">Usinas</div>
+            <div className="text-lg font-bold text-orange-600 leading-none">{constructionWorks.length}</div>
+            <div className="text-[10px] text-gray-500">Obras</div>
           </div>
         </div>
       </div>
@@ -288,6 +300,10 @@ export default function Sidebar({
             <span className="text-gray-600">Geração Energia (Biogás/PCH)</span>
           </div>
           <div className="flex items-center gap-2">
+            <IconConstruction className="w-4 h-4 text-orange-500 shrink-0" />
+            <span className="text-gray-600">Obra em andamento</span>
+          </div>
+          <div className="flex items-center gap-2">
             <div className="w-4 h-0.5 bg-[#005BAA] rounded shrink-0" />
             <span className="text-gray-600">Adutoras de água</span>
           </div>
@@ -309,14 +325,13 @@ export default function Sidebar({
           </summary>
           <div className="mt-2 space-y-1.5 text-[9px] text-gray-400">
             <p><strong className="text-gray-500">Fontes:</strong> SABESP, EMAE, ANA (Agência Nacional de Águas), SNIS (Sistema Nacional de Informações sobre Saneamento), INMET/CPTEC.</p>
-            <p><strong className="text-gray-500">Atualização:</strong> Dados de referência SNIS 2023. Níveis de reservatórios simulados com base em séries históricas.</p>
+            <p><strong className="text-gray-500">Atualização:</strong> Dados de referência SNIS 2023. Níveis de reservatórios atualizados em tempo real via SABESP Mananciais.</p>
             <p><strong className="text-gray-500">Projeções:</strong> Cenários de previsão baseados em tendência de consumo e projeções pluviométricas (INMET/CPTEC).</p>
             <p><strong className="text-gray-500">Marco Legal:</strong> Lei 14.026/2020 - Metas de universalização até 2033.</p>
-            {viewMode === "investor" && (
-              <p><strong className="text-gray-500">Regulação:</strong> ARSESP (Agência Reguladora de Saneamento e Energia de SP). Revisão tarifária quinquenal.</p>
-            )}
+            <p><strong className="text-gray-500">URAE1:</strong> Contrato de concessão SABESP - RMSP com metas intermediárias até 2029.</p>
+            <p><strong className="text-gray-500">Regulação:</strong> ARSESP (Agência Reguladora de Saneamento e Energia de SP). Revisão tarifária quinquenal.</p>
             <p className="pt-1 border-t border-gray-200 text-gray-300">
-              ⚠ Dados ilustrativos para treinamento e demonstração. Não utilizar para decisões operacionais.
+              Dados ilustrativos para treinamento e demonstração. Não utilizar para decisões operacionais.
             </p>
           </div>
         </details>
