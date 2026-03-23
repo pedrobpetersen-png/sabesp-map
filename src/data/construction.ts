@@ -121,16 +121,4 @@ export const constructionWorks: ConstructionWork[] = [
     expected_completion: "2029-Q2",
     description: "Nova adutora de 1.800mm para reforço do abastecimento da Baixada Santista. Capacidade adicional de 2,5 m³/s.",
   },
-  {
-    id: "obra-011",
-    name: "Expansão Aquapolo (Reúso Industrial)",
-    lat: -23.6220,
-    lng: -46.6950,
-    type: "treatment",
-    status: "in_progress",
-    progress_pct: 55,
-    investment_brl_mi: 780,
-    expected_completion: "2028-Q1",
-    description: "Ampliação do Aquapolo, maior projeto de reúso de água industrial da América Latina. Operado pela SABESP em parceria com a GS Inima. Expansão de 1.000 para 1.500 L/s de água de reúso a partir do efluente tratado da ETE ABC, atendendo o polo petroquímico de Capuava e indústrias do ABC.",
-  },
 ];

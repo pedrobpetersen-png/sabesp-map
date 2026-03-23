@@ -21,7 +21,7 @@ export const etes: ETE[] = [
     treatment_pct: 92,
     municipality: "São Caetano do Sul",
     system: "RMSP Sudeste",
-    description: "Atende a região do ABC paulista: Santo André, São Bernardo e São Caetano.",
+    description: "Atende a região do ABC paulista: Santo André, São Bernardo e São Caetano. Fornece efluente tratado para o Aquapolo Ambiental (reúso industrial).",
   },
   {
     id: "ete-003",
@@ -154,5 +154,16 @@ export const etes: ETE[] = [
     municipality: "Jundiaí",
     system: "Interior Sul",
     description: "Atende Jundiaí, cidade com um dos melhores índices de saneamento do país.",
+  },
+  {
+    id: "ete-015",
+    name: "Aquapolo Ambiental (Reúso)",
+    lat: -23.6830,
+    lng: -46.5580,
+    capacity_m3s: 1.0,
+    treatment_pct: 100,
+    municipality: "São Paulo",
+    system: "RMSP Sudeste",
+    description: "Maior projeto de reúso de água industrial do Hemisfério Sul, em operação desde 2012. Parceria SABESP e GS Inima. Produz até 1.000 L/s de água de reúso a partir do efluente tratado da ETE ABC, atendendo o Polo Petroquímico de Capuava (Braskem) e indústrias do ABC. Cada litro produzido economiza um litro de água potável.",
   },
 ];
