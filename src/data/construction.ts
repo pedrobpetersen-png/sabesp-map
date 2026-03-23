@@ -99,6 +99,18 @@ export const constructionWorks: ConstructionWork[] = [
   },
   {
     id: "obra-009",
+    name: "Interligação Billings-Taiaçupeba",
+    lat: -23.6800,
+    lng: -46.4200,
+    type: "pipeline",
+    status: "in_progress",
+    progress_pct: 38,
+    investment_brl_mi: 950,
+    expected_completion: "2028-Q4",
+    description: "Interligação entre a Represa Billings e o reservatório Taiaçupeba (Sistema Alto Tietê). Transferência de até 4 m³/s para reforçar o abastecimento da zona leste da RMSP. Obra estratégica para segurança hídrica pós-aquisição da EMAE.",
+  },
+  {
+    id: "obra-010",
     name: "Nova Adutora Baixada Santista",
     lat: -23.9200,
     lng: -46.3800,
